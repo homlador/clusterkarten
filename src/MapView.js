@@ -73,6 +73,22 @@ export class MapView {
   }
 
   /**
+   * Registriert einen Callback für jede abgeschlossene Kartenbewegung.
+   * @param {() => void} cb
+   */
+  onMoveEnd(cb) {
+    this._map.on('moveend', cb);
+  }
+
+  /**
+   * Entfernt einen zuvor registrierten moveend-Callback.
+   * @param {() => void} cb
+   */
+  offMoveEnd(cb) {
+    this._map.off('moveend', cb);
+  }
+
+  /**
    * Rendert einen K-Means-Schritt auf der Karte:
    *   – gestrichelte farbige Linien von jedem Punkt zu seinem Zentrum
    *   – farbige CircleMarker für Datenpunkte (Farbe = Cluster)
@@ -201,6 +217,7 @@ export class MapView {
     this._centroidLayer.clearLayers();
 
     const { prototypes, activePointIndex, nearestProtoIndex, type, oldProtoPos } = step;
+    const isDistStep    = type === 'vq-distance';
     const isNearestStep = type === 'vq-nearest';
     const isMoveStep    = type === 'vq-move';
 
@@ -225,6 +242,23 @@ export class MapView {
         opacity:   0.9,
         dashArray: '8 4',
       }).addTo(this._lineLayer);
+    }
+
+    // Für Distanz-Teilschritte: Mess-Linien vom aktiven Punkt zu allen bisher gemessenen Prototypen
+    if (isDistStep && activePointIndex >= 0) {
+      const { measuredProtoIndex, nearestSoFar } = step;
+      const p = datapoints[activePointIndex];
+      for (let j = 0; j <= measuredProtoIndex; j++) {
+        const proto     = prototypes[j];
+        const isCurrent = j === measuredProtoIndex;
+        const isBest    = j === nearestSoFar && j !== measuredProtoIndex;
+        L.polyline([[p.x, p.y], [proto.lat, proto.lng]], {
+          color:     isCurrent ? '#f1c40f' : (isBest ? '#2ecc71' : '#aaaaaa'),
+          weight:    isCurrent ? 3 : 1.5,
+          opacity:   isCurrent ? 1.0 : 0.45,
+          dashArray: '8 4',
+        }).addTo(this._lineLayer);
+      }
     }
 
     // 2. Datenpunkte
@@ -430,6 +464,17 @@ export class MapView {
     const { lat, lng } = this._map.getCenter();
     const zoom         = this._map.getZoom();
     return `geo:${lat.toFixed(5)},${lng.toFixed(5)}?z=${zoom}`;
+  }
+
+  /** Gibt die aktuell sichtbaren Kartengrenzen zurück. */
+  getMapBounds() {
+    const b = this._map.getBounds();
+    return {
+      south: b.getSouth(),
+      north: b.getNorth(),
+      west:  b.getWest(),
+      east:  b.getEast(),
+    };
   }
 
   // ── Legacy-Methode (wird nach Einführung des Clusterings nicht mehr genutzt) ─

@@ -15,3 +15,8 @@ Interaktive Visualisierung von Clusterverfahren auf einer Karte zur Verwendung i
 * Schritte K-Means deutlicher machen?: Punkte Zuweisen, Zentren aktualisieren | Volle Iteration | Durchlauf    
 * Vereinfachte Darstellung mit X- und Y-Koordinaten fur enaktive Variante
 * VQ: Zufällige Prototypen irgendwo 
+* Überschrift / Aufgaben ?
+* Einfacheres Modifizieren vorhandender Szenarien
+* Auswahl der Algorithmen aus Lehrer raus
+* Laden von CSV Daten
+* szenarios um task ergänzen

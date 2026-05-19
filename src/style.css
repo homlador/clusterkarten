@@ -24,7 +24,7 @@ body {
 
 #app {
   display: grid;
-  grid-template-columns: 540px 1fr;
+  grid-template-columns: 300px 1fr;
   grid-template-rows: 1fr auto;
   height: 100dvh;
 }
@@ -41,7 +41,7 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 9999;
   transform: translateX(110%);
   transition: transform 0.25s ease;
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
@@ -49,40 +49,6 @@ body {
 
 #panel.panel--open {
   transform: translateX(0);
-}
-
-/* ── Panel-Toggle-Button ─────────────────────────────────── */
-.panel-toggle-btn {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1001;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background: #0f3460;
-  color: var(--color-text);
-  border: 2px solid #4a90d9;
-  font-size: 1.15rem;
-  cursor: pointer;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55);
-  transition: background 0.15s, transform 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  user-select: none;
-  flex-shrink: 0;
-}
-
-.panel-toggle-btn:hover {
-  background: #1a4a8a;
-  transform: scale(1.07);
-}
-
-.panel-toggle-btn--open {
-  background: #1a3a70;
-  border-color: #74b9ff;
 }
 
 #app.log--collapsed {
@@ -132,28 +98,6 @@ body {
   background: rgba(255,255,255,0.1);
 }
 
-.log-reopen-btn {
-  position: fixed;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  z-index: 500;
-  background: var(--color-panel);
-  border: 1px solid var(--color-border);
-  border-left: none;
-  color: var(--color-muted);
-  cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0.75rem 0.35rem;
-  border-radius: 0 4px 4px 0;
-  transition: color 0.15s, background 0.15s;
-}
-
-.log-reopen-btn:hover {
-  color: #fff;
-  background: var(--color-accent);
-}
-
 .log-panel__scenario {
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--color-border);
@@ -161,14 +105,14 @@ body {
 }
 
 .log-panel__scenario-name {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: #fff;
   margin-bottom: 0.3rem;
 }
 
 .log-panel__scenario-desc {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   color: var(--color-muted);
   line-height: 1.45;
 }
@@ -223,6 +167,7 @@ body {
 .log-entry__type[data-type="vq-nearest"]            { background: #1a5276; }
 .log-entry__type[data-type="vq-move"]               { background: #6e2f8a; }
 .log-entry__type[data-type="vq-done"]               { background: #1e5e3a; }
+.log-entry__type[data-type="vq-distance"]           { background: #7d6008; }
 
 .log-entry__desc {
   font-size: 0.75rem;
@@ -251,11 +196,11 @@ body {
 
 .panel__label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-muted);
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .panel__select {
@@ -411,8 +356,8 @@ body {
 }
 
 .controls__counter {
-  font-size: 0.85rem;
-  color: var(--color-muted);
+  font-size: 0.9rem;
+  color: var(--color-text);
   white-space: nowrap;
 }
 
@@ -431,10 +376,15 @@ body {
 .controls__type[data-type="update-move"]             { background: #6e2f8a; }
 .controls__type[data-type="update"]                  { background: #6e2f8a; }
 .controls__type[data-type="converged"]               { background: #1e5e3a; }
+.controls__type[data-type="vq-init"]                 { background: #34495e; }
+.controls__type[data-type="vq-distance"]             { background: #7d6008; }
+.controls__type[data-type="vq-nearest"]              { background: #1a5276; }
+.controls__type[data-type="vq-move"]                 { background: #6e2f8a; }
+.controls__type[data-type="vq-done"]                 { background: #1e5e3a; }
 
 .controls__desc-text {
   font-size: 0.9rem;
-  color: var(--color-muted);
+  color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -449,7 +399,7 @@ body {
 }
 
 .controls__label {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--color-muted);
   white-space: nowrap;
 }
@@ -469,6 +419,48 @@ body {
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
+}
+
+/* ── Toolbar: Icon-Buttons ───────────────────────────────── */
+.controls__icon-btn {
+  width: 2.8rem;
+  height: 2.8rem;
+  background: var(--color-accent);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  user-select: none;
+  line-height: 1;
+}
+
+#btn-open-settings {
+  margin-right: 20px;
+}
+
+.controls__icon-btn:hover {
+  background: #1a4a8a;
+}
+
+/* Log-Toggle-Button leuchtet, wenn Log sichtbar ist */
+#app:not(.log--collapsed) #btn-log-toggle {
+  background: #1a4a8a;
+  border-color: #4a90d9;
+  color: #74b9ff;
+}
+
+.controls__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ── Szenario-Panel: Aktions-Buttons ─────────────────────── */
@@ -492,6 +484,13 @@ body {
 
 .panel__btn-action:hover {
   background: #1a4a8a;
+}
+
+.panel__copy-feedback {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: #74b9ff;
+  text-align: center;
 }
 
 /* ── Szenario-Panel: Neu-Button ──────────────────────────── */
@@ -772,4 +771,107 @@ body {
 @keyframes centroid-move-pulse {
   from { transform: rotate(45deg) scale(1.0); }
   to   { transform: rotate(45deg) scale(1.3); }
+}
+
+/* ── Szenario-Info-Banner (oben links, fixed) ─────────────── */
+.scenario-banner {
+  position: fixed;
+  top: 0.75rem;
+  left: 4rem;
+  z-index: 900;
+  max-width: 600px;
+  background: rgba(22, 33, 62, 0.90);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-left: 40px;
+  padding: 0.7rem 0.9rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.scenario-banner__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.scenario-banner__name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  flex: 1;
+  min-width: 0;
+}
+
+.scenario-banner__algo-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  background: var(--color-accent);
+  color: #74b9ff;
+  border: 1px solid #4a90d9;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+
+.scenario-banner__info-btn {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.1rem 0.25rem;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.scenario-banner__info-btn:hover,
+.scenario-banner__info-btn--active {
+  color: #74b9ff;
+}
+
+.scenario-banner__task {
+  font-size: 0.87rem;
+  color: var(--color-text);
+  line-height: 1.45;
+}
+
+.scenario-banner__desc {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  line-height: 1.45;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.5rem;
+}
+
+/* Kein Banner hinter dem offenen Log-Panel ─ leicht einrücken */
+#app:not(.log--collapsed) .scenario-banner {
+  left: calc(300px + 0.75rem);
+  transition: left 0.25s ease;
+}
+
+/* ── GitHub-Link (unten rechts, fixed) ─────────────────── */
+.github-link {
+  position: fixed;
+  bottom: 2rem;
+  right: 0.8rem;
+  z-index: 900;
+  color: var(--color-muted);
+  opacity: 0.55;
+  transition: opacity 0.15s, color 0.15s;
+  line-height: 0;
+  display: block;
+}
+
+.github-link:hover {
+  opacity: 1;
+  color: #fff;
 }

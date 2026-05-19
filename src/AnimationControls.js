@@ -13,16 +13,21 @@ export class AnimationControls {
    * @param {{ onStepChange: (index: number, step: object) => void,
    *           onKChange:    (k: number) => void }} callbacks
    */
-  constructor(container, { onStepChange, onKChange, onHeatmapToggle, logContainer }) {
+  constructor(container, { onStepChange, onKChange, onHeatmapToggle, logContainer,
+                            onLogToggle, onOpenEditor, onOpenSettings }) {
     this._container        = container;
     this._onStepChange     = onStepChange;
     this._onKChange        = onKChange;
     this._onHeatmapToggle  = onHeatmapToggle ?? (() => {});
+    this._onLogToggle      = onLogToggle     ?? (() => {});
+    this._onOpenEditor     = onOpenEditor    ?? (() => {});
+    this._onOpenSettings   = onOpenSettings  ?? (() => {});
     this._logContainer     = logContainer ?? null;
     this._scenarioName     = '';
     this._scenarioDesc     = '';
     this._logList          = null;
     this._steps        = [];
+    this._logicalSteps = [];
     this._currentIndex = 0;
     this._playTimer    = null;
     this._speed        = 200; // ms pro Schritt
@@ -36,8 +41,32 @@ export class AnimationControls {
   setSteps(steps) {
     this._pause();
     this._steps = steps;
+    this._logicalSteps = this._buildLogicalSteps(steps);
     this._renderLog();
     this._goToStep(0);
+  }
+
+  /** Fasst aufeinanderfolgende vq-move-Schritte zu einem logischen Schritt zusammen. */
+  _buildLogicalSteps(steps) {
+    const logical = [];
+    let i = 0;
+    while (i < steps.length) {
+      const step = steps[i];
+      if (step.type === 'vq-move') {
+        const group = { type: 'vq-move', description: step.description, indices: [i] };
+        let j = i + 1;
+        while (j < steps.length && steps[j].type === 'vq-move') {
+          group.indices.push(j);
+          j++;
+        }
+        logical.push(group);
+        i = j;
+      } else {
+        logical.push({ type: step.type, description: step.description, indices: [i] });
+        i++;
+      }
+    }
+    return logical;
   }
 
   /**
@@ -69,8 +98,10 @@ export class AnimationControls {
     this._container.innerHTML = `
       <div class="controls">
 
+        <button id="btn-log-toggle" class="controls__icon-btn" title="Protokoll ein-/ausblenden">&#9776;</button>
+
         <div class="controls__k">
-          <label class="controls__label" for="k-input">Cluster k</label>
+          <label class="controls__label" for="k-input">Anzahl Cluster: </label>
           <input type="number" id="k-input" class="controls__k-input"
                  min="1" max="10" value="3" />
           <button id="btn-rerun" class="controls__btn-rerun">↺ Neu</button>
@@ -105,26 +136,34 @@ export class AnimationControls {
           </label>
         </div>
 
+        <div class="controls__actions">
+          <button id="btn-open-settings" class="controls__icon-btn" title="Einstellungen">⚙</button>
+        </div>
+
       </div>
     `;
 
     // Referenzen cachen
-    this._kInput      = this._container.querySelector('#k-input');
-    this._btnPlay     = this._container.querySelector('#btn-play');
-    this._btnNext     = this._container.querySelector('#btn-next');
-    this._btnRerun    = this._container.querySelector('#btn-rerun');
-    this._counterEl   = this._container.querySelector('#step-counter');
-    this._typeEl      = this._container.querySelector('#step-type');
-    this._descEl      = this._container.querySelector('#step-desc');
-    this._speedSlider = this._container.querySelector('#speed-slider');
-    this._speedLabel  = this._container.querySelector('#speed-label');
-    this._showDistCb   = this._container.querySelector('#show-dist');
-    this._showAssignCb  = this._container.querySelector('#show-assign');
-    this._showHeatmapCb = this._container.querySelector('#show-heatmap');
+    this._kInput         = this._container.querySelector('#k-input');
+    this._btnPlay        = this._container.querySelector('#btn-play');
+    this._btnNext        = this._container.querySelector('#btn-next');
+    this._btnRerun       = this._container.querySelector('#btn-rerun');
+    this._btnLogToggle   = this._container.querySelector('#btn-log-toggle');
+    this._btnOpenSettings= this._container.querySelector('#btn-open-settings');
+    this._counterEl      = this._container.querySelector('#step-counter');
+    this._typeEl         = this._container.querySelector('#step-type');
+    this._descEl         = this._container.querySelector('#step-desc');
+    this._speedSlider    = this._container.querySelector('#speed-slider');
+    this._speedLabel     = this._container.querySelector('#speed-label');
+    this._showDistCb     = this._container.querySelector('#show-dist');
+    this._showAssignCb   = this._container.querySelector('#show-assign');
+    this._showHeatmapCb  = this._container.querySelector('#show-heatmap');
 
     // Events
     this._btnPlay.addEventListener('click',  () => this._togglePlay());
     this._btnNext.addEventListener('click',  () => { this._pause(); this._goToStep(this._currentIndex + 1, 1); });
+    this._btnLogToggle.addEventListener('click',    () => this._onLogToggle());
+    this._btnOpenSettings.addEventListener('click', () => this._onOpenSettings());
 
     this._speedSlider.addEventListener('input', () => {
       this._speed = parseInt(this._speedSlider.value, 10);
@@ -173,7 +212,10 @@ export class AnimationControls {
     this._currentIndex = index;
     const step = this._steps[this._currentIndex];
 
-    this._counterEl.textContent = `Schritt ${this._currentIndex + 1} / ${this._steps.length}`;
+    const _logIdx   = this._logicalSteps.findIndex(ls => ls.indices.includes(this._currentIndex));
+    const _logTotal  = this._logicalSteps.length || this._steps.length;
+    const _logNum    = (_logIdx >= 0 ? _logIdx : this._currentIndex) + 1;
+    this._counterEl.textContent = `Schritt ${_logNum} / ${_logTotal}`;
     this._typeEl.textContent    = this._typeLabel(step.type);
     this._typeEl.dataset.type   = step.type;
     this._descEl.textContent    = step.description;
@@ -202,6 +244,7 @@ export class AnimationControls {
   /** Gibt true zurück, wenn ein Schritt dieses Typs aktuell übersprungen werden soll. */
   _shouldSkip(type) {
     if (!this._showDistCb?.checked   && type === 'assign-point-distance') return true;
+    if (!this._showDistCb?.checked   && type === 'vq-distance')           return true;
     if (!this._showAssignCb?.checked && type === 'assign-point')          return true;
     return false;
   }
@@ -246,6 +289,7 @@ export class AnimationControls {
       update:                  'Update',
       converged:               '✓ Konvergiert',
       'vq-init':               'Init',
+      'vq-distance':           'Distanzmessung',
       'vq-nearest':            'Nächster Prototyp',
       'vq-move':               'Prototyp bewegen',
       'vq-done':               '✓ VQ abgeschlossen',
@@ -264,53 +308,37 @@ export class AnimationControls {
         <span>Schrittprotokoll</span>
         <button class="log-panel__toggle" title="Panel ausblenden">◀</button>
       </div>
-      <div class="log-panel__scenario">
-        <div class="log-panel__scenario-name">${this._scenarioName}</div>
-        <div class="log-panel__scenario-desc">${this._scenarioDesc}</div>
-      </div>
       <ul class="log-panel__list"></ul>
     `;
 
-    // Reopen-Button einmalig erzeugen
-    if (!this._logReopenBtn) {
-      this._logReopenBtn = document.createElement('button');
-      this._logReopenBtn.className = 'log-reopen-btn';
-      this._logReopenBtn.title = 'Protokoll einblenden';
-      this._logReopenBtn.textContent = '▶';
-      document.body.appendChild(this._logReopenBtn);
-      this._logReopenBtn.addEventListener('click', () => {
-        app?.classList.remove('log--collapsed');
-        this._logReopenBtn.hidden = true;
-      });
-    }
-    this._logReopenBtn.hidden = !isCollapsed;
+    // Reopen-Button-Logik entfernt – Log-Toggle jetzt in der Toolbar
 
     const toggleBtn = this._logContainer.querySelector('.log-panel__toggle');
     toggleBtn.addEventListener('click', () => {
       app?.classList.add('log--collapsed');
-      if (this._logReopenBtn) this._logReopenBtn.hidden = false;
     });
 
     this._logList = this._logContainer.querySelector('.log-panel__list');
-    this._steps.forEach((step, i) => {
-      const li = document.createElement('li');
-      li.className = 'log-entry';
-      li.dataset.index = i;
-      li.innerHTML = `
-        <span class="log-entry__num">${i + 1}</span>
-        <span class="log-entry__type" data-type="${step.type}">${this._typeLabel(step.type)}</span>
-        <span class="log-entry__desc">${step.description}</span>
+    (this._logicalSteps.length ? this._logicalSteps : []).forEach((ls, li) => {
+      const el = document.createElement('li');
+      el.className = 'log-entry';
+      el.dataset.logical = li;
+      el.innerHTML = `
+        <span class="log-entry__num">${li + 1}</span>
+        <span class="log-entry__type" data-type="${ls.type}">${this._typeLabel(ls.type)}</span>
+        <span class="log-entry__desc">${ls.description}</span>
       `;
-      li.addEventListener('click', () => { this._pause(); this._goToStep(i); });
-      this._logList.appendChild(li);
+      el.addEventListener('click', () => { this._pause(); this._goToStep(ls.indices[0]); });
+      this._logList.appendChild(el);
     });
   }
 
-  _updateLog(index) {
+  _updateLog(actualIndex) {
     if (!this._logList) return;
     const prev = this._logList.querySelector('.log-entry--active');
     if (prev) prev.classList.remove('log-entry--active');
-    const active = this._logList.querySelector(`[data-index="${index}"]`);
+    const logIdx = this._logicalSteps.findIndex(ls => ls.indices.includes(actualIndex));
+    const active = logIdx >= 0 ? this._logList.querySelector(`[data-logical="${logIdx}"]`) : null;
     if (active) {
       active.classList.add('log-entry--active');
       active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });

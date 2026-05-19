@@ -1,5 +1,6 @@
 {
   "name": "LieferDINst",
+  "task": "Finde die besten Standorte für die LieferDINst-Filialen basierend auf den gemeldeten Kundenstandorten.",
   "description": "Fiktive Haushalte in Dinslaken, die Kunde eines fiktiven Lieferdienstes sind.",
   "location": "geo:51.56461,6.74621?z=14",
   "k": 1,

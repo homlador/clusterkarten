@@ -16,13 +16,14 @@ export class VQ {
    * @param {Array<{x: number, y: number}>} points  x = Breitengrad, y = Längengrad
    * @param {number} k  Anzahl Prototypen
    */
-  constructor(points, k) {
+  constructor(points, k, bounds = null) {
     if (k < 1) throw new Error('k muss mindestens 1 sein.');
     if (k > points.length) throw new Error(
       `k (${k}) darf nicht größer als die Punktanzahl (${points.length}) sein.`
     );
     this._points = points;
     this._k      = k;
+    this._bounds = bounds; // { south, north, west, east } oder null
   }
 
   /**
@@ -34,10 +35,19 @@ export class VQ {
     const n = this._points.length;
     const allIndices = [...Array(n).keys()];
 
-    // k zufällige Datenpunkte als initiale Prototypen (ohne Wiederholung)
-    const shuffledInit = [...allIndices].sort(() => Math.random() - 0.5);
-    const prototypes   = shuffledInit.slice(0, this._k)
-      .map(i => ({ lat: this._points[i].x, lng: this._points[i].y }));
+    // k Prototypen initialisieren: zufällig auf der Karte (falls Grenzen bekannt), sonst an Datenpunkten
+    let prototypes;
+    if (this._bounds) {
+      const { south, north, west, east } = this._bounds;
+      prototypes = Array.from({ length: this._k }, () => ({
+        lat: south + Math.random() * (north - south),
+        lng: west  + Math.random() * (east  - west),
+      }));
+    } else {
+      const shuffledInit = [...allIndices].sort(() => Math.random() - 0.5);
+      prototypes = shuffledInit.slice(0, this._k)
+        .map(i => ({ lat: this._points[i].x, lng: this._points[i].y }));
+    }
 
     steps.push({
       type:              'vq-init',
@@ -55,12 +65,21 @@ export class VQ {
     for (const i of order) {
       const pt = this._points[i];
 
-      // Nächsten Prototypen finden
+      // Distanz zu jedem Prototypen messen und einzeln als Schritt speichern
       let nearest = 0;
       let minDist = Infinity;
       for (let j = 0; j < prototypes.length; j++) {
         const d = this._distKm(pt.x, pt.y, prototypes[j].lat, prototypes[j].lng);
         if (d < minDist) { minDist = d; nearest = j; }
+        steps.push({
+          type:               'vq-distance',
+          description:        `Punkt ${i + 1}: Abstand zu Prototyp ${j + 1}: ${d.toFixed(2)} km`,
+          prototypes:         prototypes.map(p => ({ ...p })),
+          activePointIndex:   i,
+          measuredProtoIndex: j,
+          nearestSoFar:       nearest,
+          processedIndices:   [...processedIndices],
+        });
       }
 
       steps.push({

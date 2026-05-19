@@ -1,6 +1,7 @@
 {
   "name": "Goldrush",
-  "description": "Fiktives Szenario angelehnt an den Kalifornischen Goldrausch.",
+  "task": "Finde die besten Grabungsorte basierend auf den gemeldeten Goldfunden.",
+  "description": "Fiktives Szenario angelehnt an den Kalifornischen Goldrausch inspiriert von https://computingeducation.de/proj-snaip-B/",
   "location": "geo:38.79986,-120.89967?z=16",
   "k": 3,
  "datapoints": [

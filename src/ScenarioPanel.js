@@ -7,17 +7,23 @@ export class ScenarioPanel {
    * @param {HTMLElement} container  Das DOM-Element für die Sidebar
    * @param {function(string): void} onSelect  Callback mit der gewählten Szenario-ID
    */
-  constructor(container, { onSelect, onNewScenario, onLoadFile, onAlgoChange }) {
+  constructor(container, { onSelect, onNewScenario, onLoadFile, onAlgoChange, onCopyUrl, onClose }) {
     this._container      = container;
     this._onSelect       = onSelect;
     this._onNewScenario  = onNewScenario;
     this._onLoadFile     = onLoadFile;
     this._onAlgoChange   = onAlgoChange ?? (() => {});
+    this._onCopyUrl      = onCopyUrl    ?? (() => '');
+    this._onClose        = onClose      ?? (() => {});
     this._render();
   }
 
   _render() {
     this._container.innerHTML = `
+      <div class="panel__header">
+        <span class="panel__title">Einstellungen</span>
+        <button id="btn-panel-close" class="panel__close-btn" title="Panel schließen">▶</button>
+      </div>
       <div class="panel__section">
         <label class="panel__label" for="scenario-select">Szenario</label>
         <select class="panel__select" id="scenario-select"></select>
@@ -32,7 +38,7 @@ export class ScenarioPanel {
           📂 Szenario laden
         </button>
         <button id="btn-new-scenario" class="panel__btn-new">
-          Neues Szenario erstellen
+          Szenario editieren
         </button>
       </div>
 
@@ -47,10 +53,18 @@ export class ScenarioPanel {
           </label>
         </div>
       </div>
+
+      <div class="panel__section">
+        <button id="btn-copy-url" class="panel__btn-action">🔗 URL kopieren</button>
+        <span id="copy-url-feedback" class="panel__copy-feedback" hidden>✓ Kopiert!</span>
+      </div>
     `;
 
     this._select = this._container.querySelector('#scenario-select');
     this._info   = this._container.querySelector('#scenario-info');
+
+    this._container.querySelector('#btn-panel-close')
+      .addEventListener('click', () => this._onClose());
 
     this._select.addEventListener('change', () => {
       this._onSelect(this._select.value);
@@ -68,6 +82,20 @@ export class ScenarioPanel {
     const fileInput = this._container.querySelector('#scenario-file-input');
     this._container.querySelector('#btn-load-scenario')
       .addEventListener('click', () => fileInput.click());
+
+    const copyBtn      = this._container.querySelector('#btn-copy-url');
+    const copyFeedback = this._container.querySelector('#copy-url-feedback');
+    copyBtn.addEventListener('click', async () => {
+      const url = this._onCopyUrl();
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        copyFeedback.hidden = false;
+        setTimeout(() => { copyFeedback.hidden = true; }, 2000);
+      } catch {
+        prompt('URL kopieren:', url);
+      }
+    });
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (!file) return;
@@ -99,6 +127,12 @@ export class ScenarioPanel {
    * Zeigt Name, Beschreibung und Datenpunkt-Anzahl des aktiven Szenarios.
    * @param {{ name: string, description: string, datapoints: Array }} scenario
    */
+  /** Setzt den Algorithmus-Radio-Button von außen. */
+  setAlgo(algo) {
+    const radio = this._container.querySelector(`input[name="algo"][value="${algo}"]`);
+    if (radio) radio.checked = true;
+  }
+
   setActiveScenario(scenario) {
     this._info.innerHTML = `
       <h2 class="panel__scenario-name">${scenario.name}</h2>

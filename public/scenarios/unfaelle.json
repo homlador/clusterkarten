@@ -1,5 +1,6 @@
 {
   "name": "Unfälle",
+  "task": "Finde die besten Standorte für die Rettungsdienste basierend auf den gemeldeten Unfällen.",
   "description": "Unfälle in Dinslaken 2024. Quelle: https://unfallatlas.statistikportal.de/Datenlizenz Deutschland – Namensnennung – Version 2.0",
   "location": "geo:51.56776,6.76234?z=14",
   "k": 2,

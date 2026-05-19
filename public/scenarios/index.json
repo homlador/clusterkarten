@@ -1,0 +1,7 @@
+{
+  "scenarios": [
+    { "id": "goldrush" },    
+    { "id": "lieferdinst" },
+    { "id": "unfaelle" }
+  ]
+}

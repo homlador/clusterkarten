@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clusterbildung visualisiert mit Kartendateien</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside id="panel"></aside>
+      <div id="log-panel" class="log-panel"></div>
+      <main id="map"></main>
+      <footer id="controls"></footer>
+      <button id="panel-toggle" class="panel-toggle-btn" title="Szenarien &#246;ffnen">&#9776;</button>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module">
+      import { App } from './src/App.js';
+      const app = new App(
+        document.getElementById('panel'),
+        document.getElementById('map'),
+        document.getElementById('controls'),
+        document.getElementById('log-panel'),
+      );
+      app.init().catch(err => console.error('Initialisierungsfehler:', err));
+
+      const panelToggle = document.getElementById('panel-toggle');
+      const panel       = document.getElementById('panel');
+      panelToggle.addEventListener('click', () => {
+        const isOpen = panel.classList.toggle('panel--open');
+        panelToggle.classList.toggle('panel-toggle-btn--open', isOpen);
+        panelToggle.textContent = isOpen ? '\u2715' : '\u2630';
+        panelToggle.title = isOpen ? 'Szenarien schlie\u00dfen' : 'Szenarien \u00f6ffnen';
+      });
+    </script>
+  </body>
+</html>

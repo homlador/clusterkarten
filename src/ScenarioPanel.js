@@ -7,14 +7,20 @@ export class ScenarioPanel {
    * @param {HTMLElement} container  Das DOM-Element für die Sidebar
    * @param {function(string): void} onSelect  Callback mit der gewählten Szenario-ID
    */
-  constructor(container, { onSelect, onNewScenario, onLoadFile, onAlgoChange, onCopyUrl, onClose }) {
-    this._container      = container;
-    this._onSelect       = onSelect;
-    this._onNewScenario  = onNewScenario;
-    this._onLoadFile     = onLoadFile;
-    this._onAlgoChange   = onAlgoChange ?? (() => {});
-    this._onCopyUrl      = onCopyUrl    ?? (() => '');
-    this._onClose        = onClose      ?? (() => {});
+  constructor(container, { onSelect, onNewScenario, onCreateScenario, onLoadFile, onAlgoChange, onCopyUrl, onClose,
+                            onShowDistChange, onShowAssignChange, onHeatmapChange }) {
+    this._container            = container;
+    this._onSelect             = onSelect;
+    this._onNewScenario        = onNewScenario;
+    this._onCreateScenario     = onCreateScenario     ?? (() => {});
+    this._onLoadFile           = onLoadFile;
+    this._onAlgoChange       = onAlgoChange       ?? (() => {});
+    this._onCopyUrl          = onCopyUrl          ?? (() => '');
+    this._onClose            = onClose            ?? (() => {});
+    this._onShowDistChange   = onShowDistChange   ?? (() => {});
+    this._onShowAssignChange = onShowAssignChange ?? (() => {});
+    this._onHeatmapChange    = onHeatmapChange    ?? (() => {});
+    this._currentScenario    = null;
     this._render();
   }
 
@@ -31,17 +37,7 @@ export class ScenarioPanel {
       <div class="panel__section panel__info" id="scenario-info">
         <p class="panel__info-placeholder">Lade Szenarien …</p>
       </div>
-
-      <div class="panel__section panel__section--actions">
-        <input type="file" id="scenario-file-input" accept=".json" style="display:none" />
-        <button id="btn-load-scenario" class="panel__btn-action">
-          📂 Szenario laden
-        </button>
-        <button id="btn-new-scenario" class="panel__btn-new">
-          Szenario editieren
-        </button>
-      </div>
-
+      
       <div class="panel__section">
         <label class="panel__label">Algorithmus</label>
         <div class="panel__algo-selector">
@@ -55,9 +51,36 @@ export class ScenarioPanel {
       </div>
 
       <div class="panel__section">
-        <button id="btn-copy-url" class="panel__btn-action">🔗 URL kopieren</button>
-        <span id="copy-url-feedback" class="panel__copy-feedback" hidden>✓ Kopiert!</span>
+        <label class="panel__label">Ansicht</label>
+        <label class="panel__check-label" title="Distanzmessungs-Schritte anzeigen">
+          <input type="checkbox" id="show-dist" checked />
+          Distanzmessungen
+        </label>
+        <label class="panel__check-label" title="Zuweisungs-Schritte anzeigen">
+          <input type="checkbox" id="show-assign" checked />
+          Zuweisungen
+        </label>
+        <label class="panel__check-label" title="Voronoi-Heatmap der Clusterbereiche anzeigen">
+          <input type="checkbox" id="show-heatmap" />
+          Heatmap
+        </label>
+      </div>  
+
+      <div class="panel__section panel__section--actions">
+        <button id="btn-new-scenario" class="panel__btn-action">
+          Szenario editieren
+        </button>
+        <input type="file" id="scenario-file-input" accept=".json" style="display:none" />
+        <button id="btn-load-scenario" class="panel__btn-action">
+          Szenario aus JSON laden
+        </button>
+        <button id="btn-download-json" class="panel__btn-action" disabled>
+          Szenario als JSON herunterladen
+        </button>
+        <button id="btn-copy-url" class="panel__btn-action">Szenario als 🔗 URL speichern</button>
+        <span id="copy-url-feedback" class="panel__copy-feedback" hidden>✓ Kopiert!</span>        
       </div>
+
     `;
 
     this._select = this._container.querySelector('#scenario-select');
@@ -82,6 +105,27 @@ export class ScenarioPanel {
     const fileInput = this._container.querySelector('#scenario-file-input');
     this._container.querySelector('#btn-load-scenario')
       .addEventListener('click', () => fileInput.click());
+
+    this._showDistCb   = this._container.querySelector('#show-dist');
+    this._showAssignCb = this._container.querySelector('#show-assign');
+    this._showHeatmapCb = this._container.querySelector('#show-heatmap');
+
+    this._showDistCb.addEventListener('change',    () => this._onShowDistChange(this._showDistCb.checked));
+    this._showAssignCb.addEventListener('change',  () => this._onShowAssignChange(this._showAssignCb.checked));
+    this._showHeatmapCb.addEventListener('change', () => this._onHeatmapChange(this._showHeatmapCb.checked));
+
+    this._downloadBtn = this._container.querySelector('#btn-download-json');
+    this._downloadBtn.addEventListener('click', () => {
+      if (!this._currentScenario) return;
+      const json = JSON.stringify(this._currentScenario, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${this._currentScenario.name ?? 'szenario'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
 
     const copyBtn      = this._container.querySelector('#btn-copy-url');
     const copyFeedback = this._container.querySelector('#copy-url-feedback');
@@ -133,11 +177,17 @@ export class ScenarioPanel {
     if (radio) radio.checked = true;
   }
 
+  setShowDist(v)    { if (this._showDistCb)    this._showDistCb.checked    = v; }
+  setShowAssign(v)  { if (this._showAssignCb)  this._showAssignCb.checked  = v; }
+  setShowHeatmap(v) { if (this._showHeatmapCb) this._showHeatmapCb.checked = v; }
+
   setActiveScenario(scenario) {
+    this._currentScenario = scenario;
+    if (this._downloadBtn) this._downloadBtn.disabled = false;
     this._info.innerHTML = `
       <h2 class="panel__scenario-name">${scenario.name}</h2>
       <p class="panel__scenario-desc">${scenario.description}</p>
-      <p class="panel__scenario-meta">${scenario.datapoints.length} Datenpunkt(e) · <code>${scenario.location}</code></p>
+      <p class="panel__scenario-meta">${scenario.datapoints.length} Datenpunkt(e) <br/><code>${scenario.location}</code></p>
     `;
   }
 }

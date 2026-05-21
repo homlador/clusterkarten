@@ -6,12 +6,12 @@
 
 :root {
   --panel-width: 320px;
-  --color-bg: #1a1a2e;
-  --color-panel: #16213e;
-  --color-accent: #0f3460;
-  --color-text: #e0e0e0;
-  --color-muted: #9e9e9e;
-  --color-border: #2a2a4a;
+  --color-bg: #f0f4f8;
+  --color-panel: #ffffff;
+  --color-accent: #1976d2;
+  --color-text: #1e2a3a;
+  --color-muted: #546780;
+  --color-border: #c5d0de;
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
@@ -24,41 +24,37 @@ body {
 
 #app {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  grid-template-rows: 1fr auto;
+  grid-template-columns: var(--_col-log, 300px) 1fr var(--_col-settings, 0);
+  grid-template-rows: auto 1fr auto;
   height: 100dvh;
 }
 
 /* ── Sidebar (Slide-over von rechts) ─────────────────────── */
 #panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: var(--panel-width);
-  height: 100dvh;
+  grid-column: 3;
+  grid-row: 1 / 3;
   background: var(--color-panel);
   border-left: 1px solid var(--color-border);
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  z-index: 9999;
-  transform: translateX(110%);
-  transition: transform 0.25s ease;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
-}
-
-#panel.panel--open {
-  transform: translateX(0);
+  min-height: 0;
 }
 
 #app.log--collapsed {
-  grid-template-columns: 0 1fr;
+  --_col-log: 0;
+}
+
+#app.settings--open {
+  --_col-settings: var(--panel-width);
 }
 
 /* ── Schrittprotokoll-Panel (permanente linke Spalte) ───── */
 .log-panel {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 1 / 3;
   background: var(--color-panel);
   border-right: 1px solid var(--color-border);
   display: flex;
@@ -76,7 +72,7 @@ body {
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.03em;
-  color: #fff;
+  color: var(--color-text);
   flex-shrink: 0;
 }
 
@@ -94,8 +90,8 @@ body {
 }
 
 .log-panel__toggle:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.1);
+  color: var(--color-text);
+  background: rgba(0,0,0,0.07);
 }
 
 .log-panel__scenario {
@@ -107,7 +103,7 @@ body {
 .log-panel__scenario-name {
   font-size: 0.92rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 0.3rem;
 }
 
@@ -136,8 +132,8 @@ body {
 }
 
 .log-entry--active {
-  background: rgba(74, 144, 217, 0.13);
-  border-left-color: #4a90d9;
+  background: rgba(25, 118, 210, 0.1);
+  border-left-color: #1976d2;
 }
 
 .log-entry__num {
@@ -154,6 +150,7 @@ body {
   border-radius: 3px;
   white-space: nowrap;
   background: var(--color-accent);
+  color: #fff;
   justify-self: start;
 }
 
@@ -186,7 +183,7 @@ body {
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.03em;
-  color: #fff;
+  color: var(--color-text);
 }
 
 .panel__section {
@@ -206,7 +203,7 @@ body {
 .panel__select {
   width: 100%;
   padding: 0.45rem 0.6rem;
-  background: var(--color-accent);
+  background: #ffffff;
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -215,7 +212,7 @@ body {
 }
 
 .panel__select:focus {
-  outline: 2px solid #4a90d9;
+  outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
 
@@ -244,7 +241,7 @@ body {
 
 .panel__scenario-meta code {
   font-size: 0.7rem;
-  background: var(--color-accent);
+  background: #e8edf3;
   padding: 0.1em 0.3em;
   border-radius: 3px;
 }
@@ -252,17 +249,17 @@ body {
 /* ── Karte ───────────────────────────────────────────────── */
 #map {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 2;
   min-height: 0; /* wichtig: verhindert Overflow im Grid */
 }
 /* Kartenkacheln abdunkeln und entsättigen, damit Datenpunkte hervorstechen */
 .leaflet-tile-pane {
-  filter: grayscale(75%) brightness(0.78);
+  /* filter: brightness(0.75) grayscale(0.15); */
 }
 /* ── Steuerleiste ────────────────────────────────────────── */
 #controls {
-  grid-column: 1 / 3;
-  grid-row: 2;
+  grid-column: 1 / -1;
+  grid-row: 3;
   background: var(--color-panel);
   border-top: 1px solid var(--color-border);
 }
@@ -271,8 +268,9 @@ body {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  padding: 0.9rem 1.5rem;
+  padding: 1rem 1.5rem;
   flex-wrap: wrap;
+  min-height: 4.5rem;
 }
 
 /* k-Eingabe */
@@ -285,7 +283,7 @@ body {
 .controls__k-input {
   width: 3.8rem;
   padding: 0.45rem 0.5rem;
-  background: var(--color-accent);
+  background: #ffffff;
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -296,7 +294,7 @@ body {
 .controls__btn-rerun {
   padding: 0.5rem 0.9rem;
   background: var(--color-accent);
-  color: var(--color-text);
+  color: #fff;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.9rem;
@@ -305,7 +303,7 @@ body {
 }
 
 .controls__btn-rerun:hover {
-  background: #1a4a8a;
+  background: #1565c0;
 }
 
 /* Navigationsbuttons */
@@ -316,33 +314,34 @@ body {
 }
 
 .controls__btn {
-  width: 2.8rem;
   height: 2.8rem;
+  padding: 0 1rem;
   background: var(--color-accent);
-  color: var(--color-text);
+  color: #fff;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .controls__btn:hover {
-  background: #1a4a8a;
+  background: #1565c0;
 }
 
 .controls__btn--play {
-  width: 3.5rem;
-  height: 3.5rem;
-  font-size: 1.3rem;
-  background: #0f3460;
-  border-color: #4a90d9;
+  height: 3rem;
+  padding: 0 1.2rem;
+  font-size: 0.95rem;
+  background: #1976d2;
+  border-color: #1565c0;
 }
 
 .controls__btn--play:hover {
-  background: #1a5080;
+  background: #1565c0;
 }
 
 /* Schritt-Info */
@@ -368,6 +367,7 @@ body {
   border-radius: 3px;
   white-space: nowrap;
   background: var(--color-accent);
+  color: #fff;
 }
 
 .controls__type[data-type="init"]                    { background: #34495e; }
@@ -423,18 +423,19 @@ body {
 
 /* ── Toolbar: Icon-Buttons ───────────────────────────────── */
 .controls__icon-btn {
-  width: 2.8rem;
   height: 2.8rem;
+  padding: 0 1rem;
   background: var(--color-accent);
-  color: var(--color-text);
+  color: #fff;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  white-space: nowrap;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   user-select: none;
   line-height: 1;
@@ -442,17 +443,24 @@ body {
 
 #btn-open-settings {
   margin-right: 20px;
+  font-size: 2rem;
+}
+
+#app.settings--open #btn-open-settings {
+  background: #1565c0;
+  border-color: #1976d2;
+  color: #fff;
 }
 
 .controls__icon-btn:hover {
-  background: #1a4a8a;
+  background: #1565c0;
 }
 
 /* Log-Toggle-Button leuchtet, wenn Log sichtbar ist */
 #app:not(.log--collapsed) #btn-log-toggle {
-  background: #1a4a8a;
-  border-color: #4a90d9;
-  color: #74b9ff;
+  background: #1565c0;
+  border-color: #1976d2;
+  color: #fff;
 }
 
 .controls__actions {
@@ -474,7 +482,7 @@ body {
   width: 100%;
   padding: 0.55rem 0.75rem;
   background: var(--color-accent);
-  color: var(--color-text);
+  color: #fff;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.85rem;
@@ -483,13 +491,19 @@ body {
 }
 
 .panel__btn-action:hover {
-  background: #1a4a8a;
+  background: #1565c0;
+}
+
+.panel__btn-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--color-accent);
 }
 
 .panel__copy-feedback {
   margin-top: 0.4rem;
   font-size: 0.8rem;
-  color: #74b9ff;
+  color: var(--color-accent);
   text-align: center;
 }
 
@@ -508,8 +522,25 @@ body {
 }
 
 .panel__btn-new:hover {
-  background: var(--color-accent);
-  border-color: #4a90d9;
+  background: #1565c0;
+  border-color: #1565c0;
+  color: #fff;
+}
+
+.panel__check-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  user-select: none;
+  margin-top: 0.3rem;
+}
+
+.panel__check-label input {
+  accent-color: var(--color-accent, #5ba4f5);
+  cursor: pointer;
 }
 
 .panel__algo-selector {
@@ -524,7 +555,7 @@ body {
   gap: 0.35rem;
   font-size: 0.85rem;
   cursor: pointer;
-  color: var(--color-text-secondary, #ccc);
+  color: var(--color-muted);
 }
 
 .panel__algo-label input {
@@ -553,7 +584,7 @@ body {
 
 .editor__back-btn:hover {
   background: var(--color-accent);
-  color: var(--color-text);
+  color: #fff;
 }
 
 .editor__input,
@@ -561,7 +592,7 @@ body {
 .editor__k-input {
   width: 100%;
   padding: 0.4rem 0.55rem;
-  background: var(--color-accent);
+  background: #ffffff;
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -573,7 +604,7 @@ body {
 .editor__input:focus,
 .editor__textarea:focus,
 .editor__k-input:focus {
-  outline: 2px solid #4a90d9;
+  outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
 
@@ -600,9 +631,9 @@ body {
 }
 
 .editor__btn-sm:hover {
-  background: #5a2020;
-  color: #e74c3c;
-  border-color: #e74c3c;
+  background: #fde8e8;
+  color: #c0392b;
+  border-color: #c0392b;
 }
 
 .editor__point-list {
@@ -620,14 +651,14 @@ body {
   align-items: center;
   gap: 0.4rem;
   padding: 0.25rem 0.4rem;
-  background: var(--color-accent);
+  background: #e8edf3;
   border-radius: 3px;
   font-size: 0.75rem;
 }
 
 .editor__point-num {
   font-weight: 700;
-  color: #4a90d9;
+  color: var(--color-accent);
   min-width: 1.2rem;
   text-align: right;
 }
@@ -650,8 +681,8 @@ body {
 }
 
 .editor__point-del:hover {
-  background: #5a2020;
-  color: #e74c3c;
+  background: #fde8e8;
+  color: #c0392b;
 }
 
 .editor__hint {
@@ -663,16 +694,16 @@ body {
 .editor__btn-download {
   width: 100%;
   padding: 0.55rem 0.75rem;
-  background: #1a5276;
-  color: var(--color-text);
-  border: 1px solid #4a90d9;
+  background: var(--color-accent);
+  color: #fff;
+  border: 1px solid #1565c0;
   border-radius: 4px;
   font-size: 0.85rem;
   cursor: pointer;
 }
 
 .editor__btn-download:hover:not(:disabled) {
-  background: #1f6898;
+  background: #1565c0;
 }
 
 .editor__btn-download:disabled {
@@ -694,7 +725,7 @@ body {
 .editor__search-btn {
   padding: 0.4rem 0.7rem;
   background: var(--color-accent);
-  color: var(--color-text);
+  color: #fff;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.8rem;
@@ -704,7 +735,7 @@ body {
 }
 
 .editor__search-btn:hover {
-  background: #1a4a8a;
+  background: #1565c0;
 }
 
 .editor__search-status {
@@ -775,18 +806,11 @@ body {
 
 /* ── Szenario-Info-Banner (oben links, fixed) ─────────────── */
 .scenario-banner {
-  position: fixed;
-  top: 0.75rem;
-  left: 4rem;
-  z-index: 900;
-  max-width: 600px;
-  background: rgba(22, 33, 62, 0.90);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  margin-left: 40px;
-  padding: 0.7rem 0.9rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.7rem 1rem;
   pointer-events: auto;
 }
 
@@ -798,9 +822,9 @@ body {
 }
 
 .scenario-banner__name {
-  font-size: 1.05rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text);
   line-height: 1.2;
   flex: 1;
   min-width: 0;
@@ -812,11 +836,36 @@ body {
   padding: 0.15em 0.5em;
   border-radius: 3px;
   background: var(--color-accent);
-  color: #74b9ff;
-  border: 1px solid #4a90d9;
+  color: #fff;
+  border: 1px solid #1565c0;
   white-space: nowrap;
   flex-shrink: 0;
   letter-spacing: 0.05em;
+}
+
+.scenario-banner__h5p-link {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15em 0.55em;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.scenario-banner__h5p-link:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.scenario-banner__task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
 }
 
 .scenario-banner__info-btn {
@@ -829,16 +878,17 @@ body {
   border-radius: 3px;
   line-height: 1;
   flex-shrink: 0;
+  margin-top: 0.5rem;
   transition: color 0.15s;
 }
 
 .scenario-banner__info-btn:hover,
 .scenario-banner__info-btn--active {
-  color: #74b9ff;
+  color: var(--color-accent);
 }
 
 .scenario-banner__task {
-  font-size: 0.87rem;
+  font-size: 2rem;
   color: var(--color-text);
   line-height: 1.45;
 }
@@ -852,16 +902,52 @@ body {
   padding-top: 0.5rem;
 }
 
-/* Kein Banner hinter dem offenen Log-Panel ─ leicht einrücken */
-#app:not(.log--collapsed) .scenario-banner {
-  left: calc(300px + 0.75rem);
-  transition: left 0.25s ease;
+/* ── Szenario-Banner: In-place-Editieren ──────────────────────── */
+.app--editing .scenario-banner__name,
+.app--editing .scenario-banner__task,
+.app--editing .scenario-banner__desc {
+  outline: none;
+  border-bottom: 2px solid var(--color-accent);
+  cursor: text;
+  display: block;
+  min-width: 2ch;
+  white-space: pre-wrap;
+}
+
+.app--editing .scenario-banner__name:focus,
+.app--editing .scenario-banner__task:focus,
+.app--editing .scenario-banner__desc:focus {
+  background: rgba(25, 118, 210, 0.06);
+  border-radius: 2px 2px 0 0;
+}
+
+.app--editing .scenario-banner__name:empty::before {
+  content: 'Name des Szenarios …';
+  color: var(--color-muted);
+  font-weight: normal;
+  pointer-events: none;
+}
+
+.app--editing .scenario-banner__task:empty::before {
+  content: 'Aufgabenstellung …';
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+.app--editing .scenario-banner__desc:empty::before {
+  content: 'Beschreibung (optional) …';
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+.app--editing .scenario-banner__info-btn {
+  display: none;
 }
 
 /* ── GitHub-Link (unten rechts, fixed) ─────────────────── */
 .github-link {
   position: fixed;
-  bottom: 2rem;
+  bottom: 1.7rem;
   right: 0.8rem;
   z-index: 900;
   color: var(--color-muted);
@@ -873,5 +959,5 @@ body {
 
 .github-link:hover {
   opacity: 1;
-  color: #fff;
+  color: var(--color-text);
 }

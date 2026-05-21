@@ -1,5 +1,3 @@
-import { GeoUri } from './utils/GeoUri.js';
-
 /* global L */
 
 /** Farben für bis zu 10 Cluster */
@@ -58,8 +56,20 @@ export class MapView {
    * @param {string} geoUri  z.B. "geo:51.56018,6.71694?z=14"
    */
   setView(geoUri) {
-    const { lat, lng, zoom } = GeoUri.parse(geoUri);
+    const { lat, lng, zoom } = this.parseGeoUri(geoUri);
     this._map.setView([lat, lng], zoom);
+  }
+
+  parseGeoUri(uri) {
+    const match = uri.match(/^geo:([+-]?\d+(?:\.\d+)?),([+-]?\d+(?:\.\d+)?)(?:\?z=(\d+))?/);
+    if (!match) {
+      throw new Error(`Ungültiger GEO-URI: ${uri}`);
+    }
+    return {
+      lat: parseFloat(match[1]),
+      lng: parseFloat(match[2]),
+      zoom: match[3] !== undefined ? parseInt(match[3], 10) : 13,
+    };
   }
 
   /**
@@ -88,11 +98,10 @@ export class MapView {
     this._map.off('moveend', cb);
   }
 
+  // ── K-Means-Visualisierung ─────────────────────────────────────────────────────────
+
   /**
    * Rendert einen K-Means-Schritt auf der Karte:
-   *   – gestrichelte farbige Linien von jedem Punkt zu seinem Zentrum
-   *   – farbige CircleMarker für Datenpunkte (Farbe = Cluster)
-   *   – Diamant-förmige DivIcon-Marker für Clusterzentren
    *
    * @param {object} step        Ein Schritt-Objekt aus KMeans.computeAllSteps()
    * @param {Array<{x:number,y:number}>} datapoints
@@ -128,8 +137,8 @@ export class MapView {
         const c         = centroids[j];
         const isCurrent = j === activeCentroidIndex;
         L.polyline([[p.x, p.y], [c.lat, c.lng]], {
-          color:     isCurrent ? '#f1c40f' : '#aaaaaa',
-          weight:    isCurrent ? 3 : 1.5,
+          color:     isBest ? '#17cb35' : (isCurrent ? '#f1c40f'   : '#161414'),
+          weight:    isCurrent ? 3 : 2,
           opacity:   isCurrent ? 1.0 : 0.45,
           dashArray: '8 4',
         }).addTo(this._lineLayer);
@@ -237,7 +246,7 @@ export class MapView {
       const p    = datapoints[activePointIndex];
       const proto = prototypes[nearestProtoIndex];
       L.polyline([[p.x, p.y], [proto.lat, proto.lng]], {
-        color:     '#f1c40f',
+        color:     '#17cb35',
         weight:    2.5,
         opacity:   0.9,
         dashArray: '8 4',
@@ -253,9 +262,9 @@ export class MapView {
         const isCurrent = j === measuredProtoIndex;
         const isBest    = j === nearestSoFar && j !== measuredProtoIndex;
         L.polyline([[p.x, p.y], [proto.lat, proto.lng]], {
-          color:     isCurrent ? '#f1c40f' : (isBest ? '#2ecc71' : '#aaaaaa'),
-          weight:    isCurrent ? 3 : 1.5,
-          opacity:   isCurrent ? 1.0 : 0.45,
+          color:     isBest ? '#17cb35' : (isCurrent ? '#f1c40f'   : '#161414'),
+          weight:    3,
+          opacity:   isCurrent ? 1.0 : 0.5,
           dashArray: '8 4',
         }).addTo(this._lineLayer);
       }
@@ -475,20 +484,5 @@ export class MapView {
       west:  b.getWest(),
       east:  b.getEast(),
     };
-  }
-
-  // ── Legacy-Methode (wird nach Einführung des Clusterings nicht mehr genutzt) ─
-
-  /**
-   * @deprecated Nutze renderClusterStep() stattdessen.
-   * @param {Array<{ x: number, y: number }>} datapoints
-   */
-  setMarkers(datapoints) {
-    this._pointLayer.clearLayers();
-    datapoints.forEach(({ x, y }, index) => {
-      const marker = L.marker([x, y]);
-      marker.bindPopup(`<strong>Punkt ${index + 1}</strong><br>Lat: ${x}<br>Lng: ${y}`);
-      this._pointLayer.addLayer(marker);
-    });
   }
 }

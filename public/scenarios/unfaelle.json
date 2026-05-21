@@ -4,6 +4,9 @@
   "description": "Unfälle in Dinslaken 2024. Quelle: https://unfallatlas.statistikportal.de/Datenlizenz Deutschland – Namensnennung – Version 2.0",
   "location": "geo:51.56776,6.76234?z=14",
   "k": 2,
+  "dist" : "0",
+  "assign": "0",
+  "heatmap": "0",
   "datapoints": [
 { "x": 51.569522615	, "y": 6.73119421400003},
 { "x": 51.566595374	, "y": 6.74617026600004},

@@ -1,11 +1,5 @@
 /**
  * AnimationControls – rendert die Steuerleiste am unteren Bildschirmrand.
- *
- * Bietet:
- *   – Navigation (Anfang / Zurück / Play-Pause / Weiter / Ende)
- *   – Geschwindigkeitsregler
- *   – k-Eingabe + "Neu berechnen"-Button
- *   – Schrittzähler und Beschreibungszeile
  */
 export class AnimationControls {
   /**
@@ -31,6 +25,8 @@ export class AnimationControls {
     this._currentIndex = 0;
     this._playTimer    = null;
     this._speed        = 200; // ms pro Schritt
+    this._showDist     = true;
+    this._showAssign   = true;
     this._render();
   }
 
@@ -98,42 +94,33 @@ export class AnimationControls {
     this._container.innerHTML = `
       <div class="controls">
 
-        <button id="btn-log-toggle" class="controls__icon-btn" title="Protokoll ein-/ausblenden">&#9776;</button>
+        <button id="btn-log-toggle" class="controls__icon-btn" title="Protokoll ein-/ausblenden">&#9776; Schritte einblenden</button>
 
         <div class="controls__k">
           <label class="controls__label" for="k-input">Anzahl Cluster: </label>
           <input type="number" id="k-input" class="controls__k-input"
                  min="1" max="10" value="3" />
-          <button id="btn-rerun" class="controls__btn-rerun">↺ Neu</button>
+          <button id="btn-rerun" class="controls__btn-rerun">↺ Neustart</button>
         </div>
 
         <div class="controls__nav">
-          <button id="btn-play"  class="controls__btn controls__btn--play" title="Abspielen / Pause">▶</button>
-          <button id="btn-next"  class="controls__btn" title="Schritt vor">→</button>
+          <button id="btn-play"  class="controls__btn controls__btn--play" title="Abspielen / Pause">▶ Animation abspielen</button>
+          <button id="btn-next"  class="controls__btn" title="Schritt vor">→ Einzelschritt anzeigen</button>
         </div>
 
+         <!--
         <div class="controls__info">
           <span id="step-counter" class="controls__counter">–</span>
           <span id="step-type"    class="controls__type"></span>
           <span id="step-desc"    class="controls__desc-text"></span>
         </div>
+         -->        
 
         <div class="controls__speed">
           <label class="controls__label" for="speed-slider">⏱</label>
           <input type="range" id="speed-slider" min="100" max="1000" step="100" value="500" />
           <span id="speed-label" class="controls__speed-label">1.2s</span>
-          <label class="controls__check-label" title="Distanzmessungs-Schritte anzeigen">
-            <input type="checkbox" id="show-dist" checked />
-            Distanzmessungen
-          </label>
-          <label class="controls__check-label" title="Zuweisungs-Schritte anzeigen">
-            <input type="checkbox" id="show-assign" checked />
-            Zuweisungen
-          </label>
-          <label class="controls__check-label" title="Voronoi-Heatmap der Clusterbereiche anzeigen">
-            <input type="checkbox" id="show-heatmap" />
-            Heatmap
-          </label>
+
         </div>
 
         <div class="controls__actions">
@@ -155,10 +142,9 @@ export class AnimationControls {
     this._descEl         = this._container.querySelector('#step-desc');
     this._speedSlider    = this._container.querySelector('#speed-slider');
     this._speedLabel     = this._container.querySelector('#speed-label');
-    this._showDistCb     = this._container.querySelector('#show-dist');
-    this._showAssignCb   = this._container.querySelector('#show-assign');
-    this._showHeatmapCb  = this._container.querySelector('#show-heatmap');
-
+    // Initialzustand aus Slider übernehmen
+    this._speed = parseInt(this._speedSlider.value, 10);
+    this._speedLabel.textContent = `${(this._speed / 1000).toFixed(1)}s`;
     // Events
     this._btnPlay.addEventListener('click',  () => this._togglePlay());
     this._btnNext.addEventListener('click',  () => { this._pause(); this._goToStep(this._currentIndex + 1, 1); });
@@ -169,23 +155,6 @@ export class AnimationControls {
       this._speed = parseInt(this._speedSlider.value, 10);
       this._speedLabel.textContent = `${(this._speed / 1000).toFixed(1)}s`;
       if (this._playTimer !== null) { this._pause(); this._play(); }
-    });
-
-    this._showDistCb.addEventListener('change', () => {
-      // Wenn gerade auf einem Distanzschritt → sofort weiterspringen
-      if (!this._showDistCb.checked && this._steps[this._currentIndex]?.type === 'assign-point-distance') {
-        this._goToStep(this._currentIndex, 1);
-      }
-    });
-
-    this._showAssignCb.addEventListener('change', () => {
-      if (!this._showAssignCb.checked && this._steps[this._currentIndex]?.type === 'assign-point') {
-        this._goToStep(this._currentIndex, 1);
-      }
-    });
-
-    this._showHeatmapCb.addEventListener('change', () => {
-      this._onHeatmapToggle(this._showHeatmapCb.checked);
     });
 
     this._kInput.addEventListener('change', () => {
@@ -215,11 +184,13 @@ export class AnimationControls {
     const _logIdx   = this._logicalSteps.findIndex(ls => ls.indices.includes(this._currentIndex));
     const _logTotal  = this._logicalSteps.length || this._steps.length;
     const _logNum    = (_logIdx >= 0 ? _logIdx : this._currentIndex) + 1;
-    this._counterEl.textContent = `Schritt ${_logNum} / ${_logTotal}`;
-    this._typeEl.textContent    = this._typeLabel(step.type);
-    this._typeEl.dataset.type   = step.type;
-    this._descEl.textContent    = step.description;
-    this._btnPlay.textContent   = this._playTimer !== null ? '⏸' : '▶';
+    if (this._counterEl) this._counterEl.textContent = `Schritt ${_logNum} / ${_logTotal}`;
+    if (this._typeEl) {
+      this._typeEl.textContent  = this._typeLabel(step.type);
+      this._typeEl.dataset.type = step.type;
+    }
+    if (this._descEl) this._descEl.textContent = step.description;
+    this._btnPlay.textContent   = this._playTimer !== null ? '⏸ Animation pausieren' : '▶ Animation abspielen';
 
     this._updateLog(this._currentIndex);
     this._onStepChange(this._currentIndex, step);
@@ -231,7 +202,7 @@ export class AnimationControls {
 
   _play() {
     if (this._currentIndex >= this._steps.length - 1) this._goToStep(0, 1);
-    this._btnPlay.textContent = '⏸';
+    this._btnPlay.textContent = '⏸ Animation pausieren';
     this._playTimer = setInterval(() => {
       if (this._currentIndex >= this._steps.length - 1) {
         this._pause();
@@ -243,10 +214,26 @@ export class AnimationControls {
 
   /** Gibt true zurück, wenn ein Schritt dieses Typs aktuell übersprungen werden soll. */
   _shouldSkip(type) {
-    if (!this._showDistCb?.checked   && type === 'assign-point-distance') return true;
-    if (!this._showDistCb?.checked   && type === 'vq-distance')           return true;
-    if (!this._showAssignCb?.checked && type === 'assign-point')          return true;
+    if (!this._showDist   && type === 'assign-point-distance') return true;
+    if (!this._showDist   && type === 'vq-distance')           return true;
+    if (!this._showAssign && type === 'assign-point')          return true;
     return false;
+  }
+
+  /** Setzt den Distanzmessungs-Filter von außen (z. B. aus dem Einstellungen-Panel). */
+  setShowDist(v) {
+    this._showDist = v;
+    if (!v && this._steps[this._currentIndex]?.type === 'assign-point-distance') {
+      this._goToStep(this._currentIndex, 1);
+    }
+  }
+
+  /** Setzt den Zuweisungs-Filter von außen. */
+  setShowAssign(v) {
+    this._showAssign = v;
+    if (!v && this._steps[this._currentIndex]?.type === 'assign-point') {
+      this._goToStep(this._currentIndex, 1);
+    }
   }
 
   /**
@@ -277,7 +264,7 @@ export class AnimationControls {
       clearInterval(this._playTimer);
       this._playTimer = null;
     }
-    if (this._btnPlay) this._btnPlay.textContent = '▶';
+    if (this._btnPlay) this._btnPlay.textContent = '▶ Animation abspielen';
   }
 
   _typeLabel(type) {

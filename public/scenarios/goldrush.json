@@ -4,6 +4,9 @@
   "description": "Fiktives Szenario angelehnt an den Kalifornischen Goldrausch inspiriert von https://computingeducation.de/proj-snaip-B/",
   "location": "geo:38.79986,-120.89967?z=16",
   "k": 3,
+  "dist" : "1",
+  "assign": "1",
+  "heatmap": "0",
  "datapoints": [
     {
       "x": 38.80333,

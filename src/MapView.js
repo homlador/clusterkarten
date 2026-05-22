@@ -136,6 +136,7 @@ export class MapView {
       for (let j = 0; j <= activeCentroidIndex; j++) {
         const c         = centroids[j];
         const isCurrent = j === activeCentroidIndex;
+        const isBest    = j === nearestCentroidIndex && j !== activeCentroidIndex;
         L.polyline([[p.x, p.y], [c.lat, c.lng]], {
           color:     isBest ? '#17cb35' : (isCurrent ? '#f1c40f'   : '#161414'),
           weight:    isCurrent ? 3 : 2,
